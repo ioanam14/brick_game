@@ -34,8 +34,11 @@ void Tema1::Init()
 	height = 0.15f;
 	width = 0.2f;
 
-	Mesh* rectangle = Objects::CreateRectangle("rectangle", corner, height, width, glm::vec3(0.7f, 0.2f, 0));
+	Mesh* rectangle = Objects::CreateRectangle("rectangle", corner, height, width, glm::vec3(0.7f, 0.2f, 0.0f));
 	AddMeshToList(rectangle);
+
+	Mesh* platform = Objects::CreateRectangle("platform", corner, height, width, glm::vec3(0.1f, 0.8f, 0.1f));
+	AddMeshToList(platform);
 }
 
 glm::mat3 Tema1::VisualizationTransf2D(const LogicSpace & logicSpace, const ViewportSpace & viewSpace)
@@ -113,6 +116,9 @@ void Tema1::DrawScene(glm::mat3 visMatrix)
 
 	modelMatrix = visMatrix * Transform2D::Scale(0.6f, 25.0f) * Transform2D::Translate(6.47f, 0.01f);
 	RenderMesh2D(meshes["rectangle"], shaders["VertexColor"], modelMatrix);
+
+	modelMatrix = visMatrix * Transform2D::Scale(2.5f, 0.4f) * Transform2D::Translate(0.7f, 0.2f);
+	RenderMesh2D(meshes["platform"], shaders["VertexColor"], modelMatrix);
 }
 
 void Tema1::OnInputUpdate(float deltaTime, int mods)
