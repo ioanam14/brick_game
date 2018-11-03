@@ -59,6 +59,7 @@ private:
 
 protected:
 	float height, width;
+	float platform_pos;
 	ViewportSpace viewSpace;
 	LogicSpace logicSpace;
 	glm::mat3 modelMatrix, visMatrix;

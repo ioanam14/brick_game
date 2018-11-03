@@ -33,6 +33,7 @@ void Tema1::Init()
 	glm::vec3 corner = glm::vec3(0.001, 0.001, 0);
 	height = 0.15f;
 	width = 0.2f;
+	platform_pos = 0.7f;
 
 	Mesh* rectangle = Objects::CreateRectangle("rectangle", corner, height, width, glm::vec3(0.7f, 0.2f, 0.0f));
 	AddMeshToList(rectangle);
@@ -117,7 +118,7 @@ void Tema1::DrawScene(glm::mat3 visMatrix)
 	modelMatrix = visMatrix * Transform2D::Scale(0.6f, 25.0f) * Transform2D::Translate(6.47f, 0.01f);
 	RenderMesh2D(meshes["rectangle"], shaders["VertexColor"], modelMatrix);
 
-	modelMatrix = visMatrix * Transform2D::Scale(2.5f, 0.4f) * Transform2D::Translate(0.7f, 0.2f);
+	modelMatrix = visMatrix * Transform2D::Scale(2.5f, 0.4f) * Transform2D::Translate(platform_pos, 0.2f);
 	RenderMesh2D(meshes["platform"], shaders["VertexColor"], modelMatrix);
 }
 
@@ -138,7 +139,9 @@ void Tema1::OnKeyRelease(int key, int mods)
 
 void Tema1::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
 {
-	// add mouse move event
+	if (window->GetSpecialKeyState() == 0) {
+		platform_pos += deltaX * 0.001f; 
+	}
 }
 
 void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods)
