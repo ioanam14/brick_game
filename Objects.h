@@ -7,9 +7,12 @@
 
 namespace Objects
 {
-	// Create square with given bottom left corner, length and color
+	// Create rectangle with given bottom left corner, height, weight and color
 	Mesh* CreateRectangle(std::string name, glm::vec3 leftBottomCorner, float height,
 							float width, glm::vec3 color, bool fill = true);
 
+	// Create circle with given centre, radius and color
+	Mesh* CreateCircle(std::string name, glm::vec3 center, float radius,
+		glm::vec3 color, bool fill = true);
 }
 

@@ -4,6 +4,13 @@
 #include <string>
 #include <Core/Engine.h>
 
+#include "Brick.h"
+#include "Ball.h"
+#include "Platform.h"
+#include "Wall.h"
+
+using namespace std;
+
 class Tema1 : public SimpleScene
 {
 public:
@@ -58,9 +65,14 @@ private:
 	void SetViewportArea(const ViewportSpace &viewSpace, glm::vec3 colorColor = glm::vec3(0), bool clear = true);
 
 protected:
-	float height, width;
-	float platform_pos;
+	int nr_lives;
+	int nr_bricks;
+	bool is_started;
 	ViewportSpace viewSpace;
 	LogicSpace logicSpace;
 	glm::mat3 modelMatrix, visMatrix;
+	vector<Brick> bricks;
+	Ball ball;
+	Plaform platform;
+	vector<Wall> walls;
 };
