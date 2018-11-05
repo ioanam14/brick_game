@@ -1,5 +1,8 @@
 #pragma once
-class Ball
+
+#include "GameObject.h"
+
+class Ball : public GameObject
 {
 public:
 	Ball();
@@ -8,6 +11,7 @@ public:
 
 	float x, y;
 	float radius;
-	int direction;
+	int direction_x;
+	int direction_y;
 	float angle;
 };

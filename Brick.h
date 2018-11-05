@@ -1,5 +1,8 @@
 #pragma once
-class Brick
+
+#include "GameObject.h"
+
+class Brick : public GameObject
 {
 public:
 	Brick();

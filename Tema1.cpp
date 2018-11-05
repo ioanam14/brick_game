@@ -6,6 +6,7 @@
 #include <Core/Engine.h>
 #include "Transform2D.h"
 #include "Objects.h"
+#include "GameObject.h"
 #include "Brick.h"
 #include "Ball.h"
 #include "Platform.h"
@@ -113,19 +114,76 @@ void Tema1::Update(float deltaTimeSeconds)
 	visMatrix *= VisualizationTransf2D(logicSpace, viewSpace);
 
 	// Decrease nr of lives
-	if (ball.y < 0) {
+	if (ball.y < 0 && is_started == true) {
 		nr_lives--;
 		is_started = false;
 	}
 
 	// Start moving the ball
 	if (is_started == true) {
-		ball.x += deltaTimeSeconds * cos(ball.angle);
-		ball.y += deltaTimeSeconds * sin(ball.angle) * ball.direction;
+		ball.x += deltaTimeSeconds * cos(ball.angle) * ball.direction_x;
+		ball.y += deltaTimeSeconds * sin(ball.angle) * ball.direction_y;
+
+		// Search for collision with walls
+		for (int i = 0; i < 3; i++) {
+			Wall wall = walls.at(i);
+			if (i == 0) {
+				if (ball.x + ball.radius >= wall.x + wall.scale_x * Brick::WIDTH + 0.05f) {
+					ball.direction_x *= -1;
+				}
+			}
+			else {
+				if (ball.x + ball.radius >= wall.x) {
+					ball.direction_x *= -1;
+				}
+			}
+
+			if (ball.y + ball.radius >= wall.y) {
+				ball.direction_y *= -1;
+			}
+		}
+
+		// Search for collision with platform 
+		if (platform.y >= ball.y - ball.radius) {
+			if (ball.x - ball.radius >= platform.x && ball.x - ball.radius <= platform.x + platform.lenght) {
+				ball.direction_y *= -1;
+				ball.y = 0.35f;
+				float diff = ball.x * (platform.lenght / 2);
+				if (ball.x < platform.x + platform.lenght / 2) {
+					ball.angle = acos(-1 + diff);
+				}
+				else {
+					ball.angle = acos(diff);
+				}
+			}
+		}
+
+		// Search for collision with bricks
+		for (Brick brick : bricks) {
+			if (brick.y >= ball.y - ball.radius && brick.y + Brick::WIDTH <= ball.y - ball.radius) {
+				if (ball.x - ball.radius >= brick.x && ball.x - ball.radius <= ball.x + Brick::HEIGHT) {
+					brick.visible -= 0.1f;
+					ball.direction_y *= -1;
+					/*float diff = ball.x * (platform.lenght / 2);
+					if (ball.x < platform.x + platform.lenght / 2) {
+						ball.angle = acos(-1 + diff);
+					}
+					else {
+						ball.angle = acos(diff);
+					}*/
+				}
+			}
+		}
+
 	}
 	else {
 		ball.x = platform.x + platform.lenght / 2;
+		ball.y = 0.35f;
+		ball.direction_x = 1;
+		ball.direction_y = 1;
+		ball.angle = acos(0);
 	}
+
 
 	DrawScene(visMatrix);
 }
@@ -137,7 +195,14 @@ void Tema1::DrawScene(glm::mat3 visMatrix)
 	// Draw bricks
 	for (int i = 0; i < nr_bricks; i++) {
 		Brick brick = bricks.at(i);
-		modelMatrix = visMatrix * Transform2D::Translate(brick.x, brick.y);
+		if (brick.visible == 1) {
+			modelMatrix = visMatrix * Transform2D::Translate(brick.x, brick.y);
+		}
+		else if (brick.visible >= 0) {
+			modelMatrix = visMatrix * Transform2D::Translate(brick.x, brick.y) * Transform2D::Scale(brick.visible, brick.visible);
+			brick.visible -= 0.1f;
+		}
+		
 		RenderMesh2D(meshes["rectangle"], shaders["VertexColor"], modelMatrix);
 	}
 
@@ -154,8 +219,10 @@ void Tema1::DrawScene(glm::mat3 visMatrix)
 	RenderMesh2D(meshes["rectangle"], shaders["VertexColor"], modelMatrix);
 
 	// Draw ball
-	modelMatrix = visMatrix * Transform2D::Translate(ball.x, ball.y);
-	RenderMesh2D(meshes["circle"], shaders["VertexColor"], modelMatrix);
+	if (nr_lives >= 0) {
+		modelMatrix = visMatrix * Transform2D::Translate(ball.x, ball.y);
+		RenderMesh2D(meshes["circle"], shaders["VertexColor"], modelMatrix);
+	}
 
 	// Draw lives
 	for (int i = 0; i < nr_lives; i++) {
@@ -189,3 +256,8 @@ void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods)
 void Tema1::OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods) {}
 
 void Tema1::OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) {}
+
+bool Tema1::isCollision(Ball ball, GameObject game_obj) {
+
+	return false;
+}

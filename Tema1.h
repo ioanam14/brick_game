@@ -8,6 +8,7 @@
 #include "Ball.h"
 #include "Platform.h"
 #include "Wall.h"
+#include "GameObject.h"
 
 using namespace std;
 
@@ -63,6 +64,8 @@ private:
 	glm::mat3 VisualizationTransf2D(const LogicSpace &logicSpace, const ViewportSpace &viewSpace);
 
 	void SetViewportArea(const ViewportSpace &viewSpace, glm::vec3 colorColor = glm::vec3(0), bool clear = true);
+
+	bool Tema1::isCollision(Ball ball, GameObject game_obj);
 
 protected:
 	int nr_lives;
