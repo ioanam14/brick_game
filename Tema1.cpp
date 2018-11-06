@@ -2,19 +2,22 @@
 
 #include <vector>
 #include <iostream>
+#include <stdlib.h>
+#include <time.h> 
 
 #include <Core/Engine.h>
 #include "Transform2D.h"
 #include "Objects.h"
-#include "GameObject.h"
 #include "Brick.h"
 #include "Ball.h"
 #include "Platform.h"
+#include "Powerup.h"
 #include "Wall.h"
 
 using namespace std;
 
-Tema1::Tema1() {}
+Tema1::Tema1() {
+}
 
 Tema1::~Tema1() {}
 
@@ -33,14 +36,18 @@ void Tema1::Init()
 
 	glm::vec3 corner = glm::vec3(0.001, 0.001, 0);
 	nr_lives = 3;
-	nr_bricks = 12 * 7;
 	is_started = false;
+	offset = 0.05f;
+
+	srand(time(NULL));
 
 	// Create the bricks
-	for (int i = 0; i < 12; i++) {
+	int index = 0;
+	for (int i = 0; i < 14; i++) {
 		for (int j = 0; j < 7; j++) {
-			Brick brick = Brick(0.55f + i * 0.25f, 3.4f - j * 0.25f);
-			bricks.push_back(brick);
+			Brick *brick = new Brick(0.5f + i * 0.21f, 3.4f - j * 0.18f);
+			bricks[index] = brick;
+			index++;
 		}
 	}
 
@@ -54,6 +61,10 @@ void Tema1::Init()
 	walls.push_back(Wall(0.0f, 0.3f, 0.6f, 24.0f));
 	walls.push_back(Wall(-0.1f, 3.85f, 40.0f, 1.0f));
 	walls.push_back(Wall(3.9f, 0.3f, 0.6f, 24.0f));
+	
+	// Create powerups
+	new_life = Powerup();
+	sticky = Powerup();
 
 	// Add meshes for objects
 	Mesh* rectangle = Objects::CreateRectangle("rectangle", corner, Brick::HEIGHT, Brick::WIDTH, glm::vec3(0.2f, 0.7f, 0.1f));
@@ -128,7 +139,7 @@ void Tema1::Update(float deltaTimeSeconds)
 		for (int i = 0; i < 3; i++) {
 			Wall wall = walls.at(i);
 			if (i == 0) {
-				if (ball.x + ball.radius >= wall.x + wall.scale_x * Brick::WIDTH + 0.05f) {
+				if (ball.x + ball.radius >= wall.x + wall.scale_x * Brick::WIDTH + offset) {
 					ball.direction_x *= -1;
 				}
 			}
@@ -144,8 +155,9 @@ void Tema1::Update(float deltaTimeSeconds)
 		}
 
 		// Search for collision with platform 
-		if (platform.y >= ball.y - ball.radius) {
+		if (ball.y - ball.radius <= platform.y) {
 			if (ball.x - ball.radius >= platform.x && ball.x - ball.radius <= platform.x + platform.lenght) {
+				ball.direction_x = 1;
 				ball.direction_y *= -1;
 				ball.y = 0.35f;
 				float diff = ball.x * (platform.lenght / 2);
@@ -159,22 +171,67 @@ void Tema1::Update(float deltaTimeSeconds)
 		}
 
 		// Search for collision with bricks
-		for (Brick brick : bricks) {
-			if (brick.y >= ball.y - ball.radius && brick.y + Brick::WIDTH <= ball.y - ball.radius) {
-				if (ball.x - ball.radius >= brick.x && ball.x - ball.radius <= ball.x + Brick::HEIGHT) {
-					brick.visible -= 0.1f;
+		for (int i = 0; i < NR_BRICKS; i++) {
+			Brick *brick = bricks[i];
+			if (brick->visible == 10) {
+				if (brick->x - offset <= ball.x && ball.x <= brick->x + Brick::WIDTH + offset
+					&& ball.y >= brick->y - offset && ball.y <= brick->y + Brick::HEIGHT + offset) {
+					brick->DecreaseVisibility();
 					ball.direction_y *= -1;
-					/*float diff = ball.x * (platform.lenght / 2);
-					if (ball.x < platform.x + platform.lenght / 2) {
-						ball.angle = acos(-1 + diff);
+					ball.direction_x *= -1;
+
+					// Generate powerup 
+					int random = rand() % 6;
+					cout << random << endl;
+
+					if (random == 3) {
+						new_life.x = brick->x;
+						new_life.y = brick->y;
+						new_life.floating = true;
 					}
-					else {
-						ball.angle = acos(diff);
-					}*/
-				}
+					else if (random == 5) {
+						sticky.x = brick->x;
+						sticky.y = brick->y;
+						sticky.floating = true;
+					}
+				} 
 			}
 		}
 
+		// Collision between powerups and platform
+		if (new_life.y - offset <= platform.y) {
+			if (new_life.x >= platform.x && new_life.x - Powerup::WIDTH <= platform.x + platform.lenght) {
+				new_life.floating = false;
+				nr_lives++;
+			}
+		}
+
+		if (sticky.y - offset <= platform.y) {
+			if (sticky.x >= platform.x && sticky.x - Powerup::WIDTH <= platform.x + platform.lenght) {
+				sticky.floating = false;
+				sticky.active = true;
+				sticky.time = Engine::GetElapsedTime();
+				is_started = false;
+			}
+		}
+
+		// Check if the time elapsed
+		if (sticky.active == true) {
+			float current_time = Engine::GetElapsedTime();
+			if (sticky.time + 30 < current_time) {
+				sticky.active = false;
+				is_started = true;
+			}
+		}
+
+		// Check if powerup is outside the screen
+		if (new_life.y < 0.0f) {
+			new_life.floating = false;
+		}
+
+		if (sticky.y < 0.0f) {
+			sticky.floating = false;
+		}
 	}
 	else {
 		ball.x = platform.x + platform.lenght / 2;
@@ -184,7 +241,6 @@ void Tema1::Update(float deltaTimeSeconds)
 		ball.angle = acos(0);
 	}
 
-
 	DrawScene(visMatrix);
 }
 
@@ -193,17 +249,37 @@ void Tema1::FrameEnd() {}
 void Tema1::DrawScene(glm::mat3 visMatrix)
 {
 	// Draw bricks
-	for (int i = 0; i < nr_bricks; i++) {
-		Brick brick = bricks.at(i);
-		if (brick.visible == 1) {
-			modelMatrix = visMatrix * Transform2D::Translate(brick.x, brick.y);
+	for (int i = 0; i < NR_BRICKS; i++) {
+		Brick *brick = bricks[i];
+		if (brick->visible == 10) {
+			modelMatrix = visMatrix * Transform2D::Translate(brick->x, brick->y);
+			RenderMesh2D(meshes["rectangle"], shaders["VertexColor"], modelMatrix);
 		}
-		else if (brick.visible >= 0) {
-			modelMatrix = visMatrix * Transform2D::Translate(brick.x, brick.y) * Transform2D::Scale(brick.visible, brick.visible);
-			brick.visible -= 0.1f;
+		else if (brick->visible > 0) {
+			float scale_x = Brick::WIDTH - brick->visible * 0.05f;
+			float scale_y = Brick::HEIGHT - brick->visible * 0.05f;
+			modelMatrix = visMatrix * Transform2D::Translate(brick->x, brick->y) *
+				Transform2D::Scale(scale_x, scale_y);
+			brick->DecreaseVisibility();
+			RenderMesh2D(meshes["rectangle"], shaders["VertexColor"], modelMatrix);
+
+			if (new_life.floating == true) {
+				modelMatrix = visMatrix * Transform2D::Translate(new_life.x, new_life.y) *
+					Transform2D::Scale(Powerup::WIDTH / Brick::WIDTH, Powerup::HEIGHT / Brick::HEIGHT)
+					* Transform2D::Rotate(RADIANS(20));
+				RenderMesh2D(meshes["rectangle"], shaders["Simple"], modelMatrix);
+				new_life.y -= 0.01f;
+				cout << new_life.y << endl;
+			}
+
+			if (sticky.floating == true) {
+				modelMatrix = visMatrix * Transform2D::Translate(sticky.x, sticky.y) *
+					Transform2D::Scale(Powerup::WIDTH / Brick::WIDTH, Powerup::HEIGHT / Brick::HEIGHT)
+					* Transform2D::Rotate(RADIANS(20));
+				RenderMesh2D(meshes["rectangle"], shaders["Simple"], modelMatrix);
+				sticky.y -= 0.01f;
+			}
 		}
-		
-		RenderMesh2D(meshes["rectangle"], shaders["VertexColor"], modelMatrix);
 	}
 
 	// Draw walls
@@ -256,8 +332,3 @@ void Tema1::OnMouseBtnPress(int mouseX, int mouseY, int button, int mods)
 void Tema1::OnMouseBtnRelease(int mouseX, int mouseY, int button, int mods) {}
 
 void Tema1::OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) {}
-
-bool Tema1::isCollision(Ball ball, GameObject game_obj) {
-
-	return false;
-}

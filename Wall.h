@@ -1,8 +1,6 @@
 #pragma once
 
-#include "GameObject.h"
-
-class Wall : public GameObject
+class Wall
 {
 public:
 	Wall();

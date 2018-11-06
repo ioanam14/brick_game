@@ -8,7 +8,7 @@
 #include "Ball.h"
 #include "Platform.h"
 #include "Wall.h"
-#include "GameObject.h"
+#include "Powerup.h"
 
 using namespace std;
 
@@ -65,17 +65,19 @@ private:
 
 	void SetViewportArea(const ViewportSpace &viewSpace, glm::vec3 colorColor = glm::vec3(0), bool clear = true);
 
-	bool Tema1::isCollision(Ball ball, GameObject game_obj);
+	static const int NR_BRICKS = 14 * 7;
 
 protected:
 	int nr_lives;
-	int nr_bricks;
 	bool is_started;
+	float offset;
 	ViewportSpace viewSpace;
 	LogicSpace logicSpace;
 	glm::mat3 modelMatrix, visMatrix;
-	vector<Brick> bricks;
+	Brick *bricks[NR_BRICKS];
 	Ball ball;
 	Plaform platform;
 	vector<Wall> walls;
+	Powerup new_life;
+	Powerup sticky;
 };
